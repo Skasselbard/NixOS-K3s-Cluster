@@ -1,0 +1,7 @@
+host, name, type, ip
+olaf, olaf-k3s-server, init-server, 10.0.100.10
+olaf, olaf-k3s-agent, agent, 10.0.100.11
+ulf, ulf-k3s-server, server, 10.0.100.12
+ulf, ulf-k3s-agent, agent, 10.0.100.13
+rolf, rolf-k3s-server, server, 10.0.100.14
+karl, karl-k3s-agent, agent, 10.0.100.15

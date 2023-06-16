@@ -17,11 +17,7 @@ def get_hive_nix(config: dict, custom_modules: Path):
         if host + ".nix" in [
             module.stem + module.suffix for module in custom_modules.iterdir()
         ]:
-            custom_module = (
-                "      ./"
-                + str(custom_modules.absolute().relative_to(Path.cwd()) / host)
-                + ".nix\n"
-            )
+            custom_module = "      " + str(custom_modules / host) + ".nix\n"
         json_values = ""
         for line in str.splitlines(json.dumps(values, indent=2), keepends=True):
             line = "      " + line
@@ -76,7 +72,6 @@ def main(yaml_str: str, custom_modules: Path = None):
 if __name__ == "__main__":
     # read yaml config from stdin
     input = ""
-    path = None
     for line in sys.stdin:
         input += line
     if len(sys.argv) > 1:

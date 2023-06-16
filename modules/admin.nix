@@ -1,7 +1,8 @@
 { lib, config, pkgs, ... }:
 
 with lib;
-with pkgs; {
+with pkgs;
+with builtins; {
   options = with types; {
     cluster.admin = {
       name = mkOption {
@@ -21,11 +22,15 @@ with pkgs; {
   };
   config = {
     users.extraUsers = with config.cluster.admin; {
+      root = {
+        openssh.authorizedKeys.keys = map readFile sshKeys;
+      };
+
       "${name}" = {
         isNormalUser = true;
         extraGroups = [ "wheel" ];
-        hashedPassword = hashedPwd;
-        openssh.authorizedKeys.keys = sshKeys;
+        hashedPassword = readFile hashedPwd;
+        openssh.authorizedKeys.keys = map readFile sshKeys;
       };
     };
   };

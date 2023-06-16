@@ -1,4 +1,5 @@
-{ pkgs ? import (import ./nixpkgs.nix) { } }:
+# { pkgs ? import (import ./nixpkgs.nix) { } }:
+{pkgs ? import <nixpkgs> {}, ...}:
 let
   # Stage_0
   #####################
@@ -24,7 +25,7 @@ let
       path=$1
     fi
     create-token $path
-    python3 scripts/configuration.py $path | python3 scripts/hive_nix_setup.py ./$path/nixConfigs > hive.nix
+    python3 scripts/configuration.py $path | python3 scripts/hive_nix_setup.py $path/nixConfigs > hive.nix
     '';
   build = pkgs.writeShellScriptBin "build" ''
     export NIX_CONFIG="tarball-ttl = 0"

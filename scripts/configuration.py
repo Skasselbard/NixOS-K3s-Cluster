@@ -143,9 +143,9 @@ def get_admin_password(hostname: str):
     passwd_path = secrets_dir / "passwd"
     special_path = secrets_dir / f"{hostname}_passwd"
     if special_path.exists():
-        return special_path.read_text()
+        return str(special_path)
     else:
-        return passwd_path.read_text()
+        return str(passwd_path)
 
 
 def get_ssh_keys(hostname: str):
@@ -156,7 +156,7 @@ def get_ssh_keys(hostname: str):
     keys.extend(secrets_dir.glob(f"*{hostname}*.pub"))
     if len(keys) == 0:
         print(f"Warning: no ssh keys found for host {hostname}", file=sys.stderr)
-    return [key.read_text() for key in keys]
+    return [f"{key}" for key in keys]
 
 
 def get_manifests():

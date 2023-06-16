@@ -61,7 +61,7 @@ in {
           name = baseNameOf elem;
           value = {
             mountPoint = "/var/lib/rancher/k3s/server/manifests" + baseNameOf elem;
-            hostPath = "${../. + ("/"+ elem)}";
+            hostPath = "${/. + elem}";
           };
         }) k3s.server.manifests);
     };

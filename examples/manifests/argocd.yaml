@@ -29,11 +29,8 @@ spec:
       cm:
         "admin.enabled": true
       secret:
-        argocdServerAdminPassword: $2y$10$O0Z2X0ZMc/0pPSzmouu0NuarNAlCNlJSfxz5m6kfyQVUelvnB0AdO # hashed admin password smth argo
+        argocdServerAdminPassword: $2y$10$1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ # hashed admin password
       repositories:
         - type: helm
           name: argo-cd
           url: https://argoproj.github.io/argo-helm
-        - type: git
-          url: git@gitlab.com:skassel/infrastructure/rancher.git
-          name: cluster

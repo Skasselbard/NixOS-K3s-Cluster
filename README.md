@@ -119,19 +119,15 @@ karl| eni1| 10.0.100.5| manfred
 ulrich| eno1| 10.0.100.6| manfred
 
 #### k3s.csv K3s Containers
-host| name| type| ip| ssh-access
+host| name| type| ip
 |-|-|-|-|-|
-olaf| olaf-k3s-server| init-server| 10.0.100.10| true
-olaf| olaf-k3s-agent| agent| 10.0.100.11| ignored
-ulf| ulf-k3s-server| server| 10.0.100.12| false
-ulf| ulf-k3s-agent| agent| 10.0.100.13| ignored
-rolf| rolf-k3s-server| server| 10.0.100.14| true
-karl| karl-k3s-agent| agent| 10.0.100.15| ignored
+olaf| olaf-k3s-server| init-server| 10.0.100.10
+olaf| olaf-k3s-agent| agent| 10.0.100.11
+ulf| ulf-k3s-server| server| 10.0.100.12
+ulf| ulf-k3s-agent| agent| 10.0.100.13
+rolf| rolf-k3s-server| server| 10.0.100.14
+karl| karl-k3s-agent| agent| 10.0.100.15
 
-| :bulb: INFO   
-|:------------------------|
-| k3s Agents cannot be accessed via ssh so their ssh-access field is ignored|
-|TODO: Is the key even needed? SSH can be part of extra config|
 ## Build Boot Stick for Host
 
 ```shell

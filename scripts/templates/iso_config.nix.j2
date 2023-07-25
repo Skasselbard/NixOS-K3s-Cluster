@@ -1,0 +1,47 @@
+{ pkgs, ... }:
+{
+  imports = [./{{host_name}}.nix];
+
+  environment.etc."nixos/configuration.nix" = {
+    source = ./{{host_name}}.nix;
+  };
+  environment.systemPackages = with pkgs; let 
+  # wrap install scripts in a package
+  setup = pkgs.writeScriptBin "setup" (builtins.readFile ./setup.sh);
+  partition = 
+    pkgs.writeScriptBin "partition" (builtins.readFile {{partition_script}});
+  in[
+    setup
+    partition
+    bash
+    parted
+  ];
+  ## Systemd script for automatic setup
+  # systemd.services.system_setup = {
+  #   path = with pkgs; [
+  #     setup
+  #     getDiskPath
+  #     partition
+  #     sudo
+  #     bash
+  #     parted
+  #     util-linux
+  #     e2fsprogs
+  #     coreutils
+  #     nixos-install-tools
+  #   ];
+  #   environment = {
+  #     NIX_PATH = "nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos";
+  #     NIX_PROFILES = "/run/current-system/sw";
+  #   };
+  #   wantedBy = [ "multi-user.target" ];
+  #   serviceConfig = {
+  #     Type = "oneshot";
+  #     RemainAfterExit = "yes";
+  #   };
+  #   script = ''
+  #     setup
+  #     reboot
+  #   '';
+  # };
+}

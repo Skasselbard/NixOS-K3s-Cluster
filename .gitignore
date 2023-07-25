@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 *hive.nix
+generated/*
 plans/*
 secrets/*
 nixConfigs/*

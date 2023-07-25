@@ -1,15 +1,15 @@
 # Nixos K3s Cluster
 
-Build and deploy a NixOs k3s cluster according to a set of plans.
+Build and deploy a [NixOs](https://nixos.org/) [K3s](https://k3s.io/) cluster according to a set of plans.
 TODO: link NixOS and other stuff
 
-This project builds and deploys a set of NixOS hosts and runs a Kubernetes cluster in containers.
+This project builds and deploys a set of NixOS hosts and runs a [Kubernetes](https://kubernetes.io/) cluster in containers.
 Its goal is to set up the hardware for a bare metal home cloud with a maximal level of automation.
 The configuration is a set of csv tables which also document your deployments.
 
 ## Goals
 
-1. Provide a minimal configuration for a K3s Cluster on NixOS
+1. Provide a minimal configuration for a K3s cluster on NixOS
 2. Configure a local static network and ssh access (with ssh keys)
 3. Leave room for additional NixOS host configuration including non K3s nodes
 4. Create installation media for an initial machine setup
@@ -19,7 +19,7 @@ The configuration is a set of csv tables which also document your deployments.
 ## Non Goals
 
 - Configure Kubernetes and Container Apps
-- configure non essential network like additional firewall rules
+- Configure non-essential network like additional firewall rules
   - these can be added in the custom nix configs for the hosts
 - Cluster Access from the internet
   - you should be able to extend the NixOS config for that purpose though
@@ -35,25 +35,27 @@ Others reflect personal taste.
 The following assumptions may be of interest:
 
 - K3s runs in containers on one or more host machines
-- The k3s server is running in a [nixos-container](https://nixos.wiki/wiki/NixOS_Containers) (because it is an easy NixOS integration)
-- The k3s agent runs in a podman container (because it needs to be privileged access, which I couldn't figure out for the nixos-containers)
-- Every host and k3s container have a static IP address
-- Each host can run at most one k3s server and/or agent
-  - hosts can be defined without k3s containers for additional deployments
+- The K3s server is running in a [nixos-container](https://nixos.wiki/wiki/NixOS_Containers) (because it is an easy NixOS integration)
+- The K3s agent runs in a podman container (because it needs to be privileged access, which I couldn't figure out for the nixos-containers)
+- Every host and K3s container has a static IP address
+- Each host can run at most one K3s server and/or agent
+  - hosts can be defined without K3s containers for additional deployments
 - The network is configured as macvlan
   - including the host configuration
-  - the host and the k3s containers share the same interface
+  - the host and the K3s containers share the same interface
 - Containers are in the same subnet with the same gateway as the host
   - which of course should be reachable from the deploying machine
 - The nix configuration is built on the deploying machine
+  - the auto generated files use paths that are only valid on the generating machine
 - Each host has an admin user
-  - The NixOS on the associated container for the k3s server (if it exists) has the same admin user
+  - The NixOS on the nested K3s server container (if it exists) has the same admin user
 - Hosts are accessible by ssh
   - ssh connections prohibit passwords and root logins (only ssh keys are allowed)
   - the admin user has a password for sudo once an ssh connection is established
 - Kubernetes versions are shared
-  - All k3s-servers run the same NixOs version
-  - All k3s-agents run the same Kubernetes image
+  - All K3s-servers run the same NixOs version
+  - All K3s-agents run the same Kubernetes image
+- The data on the installation medium is disposable and can be overwritten
 
 No data folders are mounted for the containers.
 Deleting the Container deletes all Kubernetes data on the host.
@@ -63,16 +65,32 @@ Deleting the Container deletes all Kubernetes data on the host.
 - Internet access
 - Physical access to the NixOS hosts
   - or a ready to use NixOS on the host to deploy to
+- installation medium aka USB drive
 
 ## Setup
 
-Checkout folder structure
+For setup, you need to create the expected folder structure and a token:
+
 ```shell
-curl smth smth
+nix-shell --run "setup [path]"
 ```
 
-You may want to backup your plans for example in a git repo.
-TODO: Link to create a repo from folder.
+The token is needed to authenticate and securely connect the different kubernetes participants.
+
+The folder structure is expected by the setup scripts.
+As shown in the [examples](./examples/) folder this structure is composed of four subfolders:
+
+1. The **plans** folder contains the main infrastructure configuration.
+   There are three files expected in this folder:
+   1. the **hosts.csv** contains information about the physical machines,
+   2. the **k3s.csv** contains information about for the k3s container configuration and
+   3. the **network.yaml** contains global network configuration nedded for hosts and k3s containers.
+2. The **nixConfigs** folder contains additional nix configuration you need.
+3. The **secrets** folder contains passwords and ssh keys needed for configuration.
+   The token file will be stored here.
+4. The **manifests** folder contains kubernetes configuration files that will be statically [deployed by k3s](https://docs.k3s.io/installation/packaged-components)
+
+You may want to back up your plans for example in a git repo.
 
 
 ## Configuration
@@ -120,7 +138,7 @@ ulrich| eno1| 10.0.100.6| manfred
 
 #### k3s.csv K3s Containers
 host| name| type| ip
-|-|-|-|-|-|
+|-|-|-|-|
 olaf| olaf-k3s-server| init-server| 10.0.100.10
 olaf| olaf-k3s-agent| agent| 10.0.100.11
 ulf| ulf-k3s-server| server| 10.0.100.12

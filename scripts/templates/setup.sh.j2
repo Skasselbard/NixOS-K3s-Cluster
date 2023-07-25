@@ -1,0 +1,47 @@
+#!/bin/sh
+# This is an auto generated file
+
+set -e
+sudo echo ''
+
+serial="{{serial}}"
+# nixosVersion="nixos-23.05" #https://channels.nixos.org/
+
+# get the boot partition
+# ##################
+# test if serial exists
+lsblk -io SERIAL,NAME | grep $serial > /dev/null
+result=$?
+if [ $result -ne 0 ]; then echo "No disk found with this serial."; exit 2; fi
+# get disk info with lsblk
+# get the line with the fitting serial with grep
+# remove the serial from the line with cut
+# make sure there is now leading whitespace with sed
+# append the /dev/ part of the path
+dev="/dev/$(lsblk -io SERIAL,NAME | grep $serial|cut -f2- --delimiter=' '| sed 's/^[[:space:]]*//')"
+# ###################
+
+sudo partition $dev
+sleep 1s # give disk label exposure some time
+# mount disks
+sudo mkdir /mnt
+sudo mount /dev/disk/by-label/nixos /mnt
+{% if not is_vm -%}
+# mount boot partition if on physical machine
+sudo mkdir -p /mnt/boot
+sudo mount /dev/disk/by-label/boot /mnt/boot
+{%- endif %}
+
+# copy configs
+sudo mkdir -p /mnt/etc/nixos
+sudo nixos-generate-config --root /mnt
+sudo cp /etc/nixos/configuration.nix /mnt/etc/nixos
+sudo cp -rL /etc/hive /mnt/etc/hive # make sure no symlinks are copied
+
+# download nix channels
+# sudo nix-channel --add "https://nixos.org/channels/$nixosVersion"
+sudo nix-channel --update nixos
+
+cd /mnt
+# https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/man-nixos-install.xml
+sudo nixos-install --no-root-passwd

@@ -1,11 +1,12 @@
 from pathlib import Path
 import argparse
-import configuration
-import hive_nix_setup
-import csv
+import json
+from jinja2 import Template
+import os
+import sys
 
 
-def setup_dir(root_path: Path):
+def init_dir(root_path: Path):
     (root_path / "plans").mkdir(parents=True, exist_ok=True)
     (root_path / "nixConfigs").mkdir(parents=True, exist_ok=True)
     (root_path / "secrets").mkdir(parents=True, exist_ok=True)
@@ -30,6 +31,47 @@ def setup_dir(root_path: Path):
     )
 
 
+def populate_host(host_name, host_config, cluster_config, is_hive=None):
+    custom_modules = Path.cwd() / "nixConfigs"
+    if not custom_modules.exists():
+        print(
+            f'Error: nix configuration path "{custom_modules}"does not exists',
+            file=sys.stderr,
+        )
+        exit(1)
+    # set empty default module paths and include them based on the host configuration
+    server_module, agent_module, custom_module = "", "", ""
+    if "server" in host_config["k3s"]:
+        server_module = "../modules/k3sServer.nix"
+    if "agent" in host_config["k3s"]:
+        agent_module = "../modules/k3sAgent.nix"
+    if host_name + ".nix" in [
+        module.stem + module.suffix for module in custom_modules.iterdir()
+    ]:
+        custom_module = str(custom_modules / host_name) + ".nix"
+    # indent parsed json for readable output
+    json_values = ""
+    for line in str.splitlines(json.dumps(host_config, indent=2), keepends=True):
+        line = "      " + line
+        json_values += line
+    # set the templating vars
+    host_vars = {
+        "hostname": host_name,
+        "k3sServer": server_module,
+        "k3sAgent": agent_module,
+        "customModule": custom_module,
+        "ip": host_config["ip"],
+        "hostConfig": json_values,
+        "token": cluster_config["token"],
+        "is_hive_setup": is_hive,
+    }
+    # load template and render templating variables
+    with open(
+        os.path.abspath(os.path.dirname(__file__)) + "/templates/host.nix.j2"
+    ) as hostTemplate:
+        return Template(hostTemplate.read()).render(host_vars)
+
+
 def main():
     # default values
     path = Path.cwd()
@@ -37,18 +79,16 @@ def main():
         description="Utility functions to build k3s cluster"
     )
     parser.add_argument(
-        "--setup", help="Setup default paths and files in $CWD", action="store_true"
+        "--init",
+        help="initialize paths and files in the expected location",
+        action="store_true",
     )
-    parser.add_argument("-d", "--dir", help="Custom path to the configuratin files")
     args = parser.parse_args()
-    if args.dir:
-        path = Path(args.dir)
     if args.setup:
-        setup_dir(path)
+        init_dir(path)
         exit(0)
     # end of parsing
     ##################################
-    print(hive_nix_setup.main(configuration.main(path)))
 
 
 if __name__ == "__main__":

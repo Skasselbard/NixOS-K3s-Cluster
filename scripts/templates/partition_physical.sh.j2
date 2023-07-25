@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# test input parameter
+if [ -z ${1+x} ]; then echo "Expected disk path"; exit 1; fi
+
+# From https://nixos.org/manual/nixos/stable/index.html#sec-installation-manual-partitioning
+{% if is_vm -%}
+# Create a MBR partition table.
+sudo parted --script $1 -- mklabel msdos
+# Add the root partition.
+sudo parted --script $1 -- mkpart primary 1mb 100%
+sudo parted --script $1 -- set 1 boot on
+
+# initialize file systems
+sudo mkfs.ext4 -L nixos -F "${1}1"
+sudo e2label "${1}1" nixos # force nixos label
+{%- else %}
+# Create a GPT partition table.
+sudo parted --script $1 -- mklabel gpt
+# The boot partition. NixOS by default uses the ESP (EFI system partition) as its /boot partition. It uses the initially reserved 512MiB at the start of the disk.
+sudo parted --script $1 -- mkpart ESP fat32 1MB 512MB
+# Add the root partition.
+sudo parted --script $1 -- mkpart primary 512mb 100%
+sudo parted --script $1 -- set 1 esp on
+
+# initialize file systems
+sudo mkfs.fat -F 32 -n boot "${1}1"
+sudo mkfs.ext4 -L nixos -F "${1}2"
+sudo e2label "${1}2" nixos # force nixos label
+{%- endif %}

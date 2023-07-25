@@ -2,7 +2,6 @@
 import os
 import sys
 import yaml
-import pandas as pd
 from pathlib import Path
 import csv
 import copy

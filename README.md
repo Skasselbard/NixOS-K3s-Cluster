@@ -146,6 +146,15 @@ ulf| ulf-k3s-agent| agent| 10.0.100.13
 rolf| rolf-k3s-server| server| 10.0.100.14
 karl| karl-k3s-agent| agent| 10.0.100.15
 
+## Known Issues
+
+I ignore the ``hardware-configuration.nix`` file. You need to figure out what settings are appropriate for your system your self (e.g. with ``nixos-generate-config``) and include it in your *nixConfigs* files.  
+The ``hardware-configuration.nix`` [contains](https://github.com/NixOS/nixpkgs/blob/nixos-23.05/nixos/doc/manual/manpages/nixos-generate-config.8) three parts:
+1. fileSystem configuration
+2. swap and
+3. ramdisk configuration, including kernel modules.
+In my use cases I want control over *1.* and *2.* and I am fine with copying *3.* to my *nixConfigs*, but this might be different for you.
+
 ## Build Boot Stick for Host
 
 ```shell

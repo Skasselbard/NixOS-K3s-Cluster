@@ -1,47 +1,70 @@
-{ pkgs, ... }:
-{
-  imports = [./{{host_name}}.nix];
-
-  environment.etc."nixos/configuration.nix" = {
-    source = ./{{host_name}}.nix;
-  };
-  environment.systemPackages = with pkgs; let 
+{ lib, pkgs, ... }:
+let 
   # wrap install scripts in a package
-  setup = pkgs.writeScriptBin "setup" (builtins.readFile ./setup.sh);
+  setup = pkgs.writeScriptBin "setup" ''
+      {{setup_script|indent(6)|replace("${","''${")}}
+    '';
   partition = 
-    pkgs.writeScriptBin "partition" (builtins.readFile {{partition_script}});
-  in[
+    pkgs.writeScriptBin "partition" ''
+      {{partition_script|indent(6)|replace("${","''${")}}
+    '';
+in {
+  imports = [./{{host_name}}.nix];
+  networking = {
+    useDHCP = lib.mkForce true;
+    macvlans = lib.mkForce {};
+    interfaces = lib.mkForce {};
+  };
+
+  # copy all configuration files
+  environment.etc = {
+    "nixos/generated" = { source = lib.sources.sourceFilesBySuffices ../generated [".nix"]; };
+    "nixos/manifests" = { source = ../manifests; };
+    "nixos/modules" = { source = ../modules; };
+    "nixos/nixConfigs" = { source = ../nixConfigs; };
+    "nixos/configuration.nix" = {
+      text = ''
+        { imports = [./generated/{{host_name}}.nix]; }
+      '';
+    };
+  };
+  environment.systemPackages = with pkgs; [
     setup
     partition
     bash
     parted
   ];
-  ## Systemd script for automatic setup
-  # systemd.services.system_setup = {
-  #   path = with pkgs; [
-  #     setup
-  #     getDiskPath
-  #     partition
-  #     sudo
-  #     bash
-  #     parted
-  #     util-linux
-  #     e2fsprogs
-  #     coreutils
-  #     nixos-install-tools
-  #   ];
-  #   environment = {
-  #     NIX_PATH = "nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos";
-  #     NIX_PROFILES = "/run/current-system/sw";
-  #   };
-  #   wantedBy = [ "multi-user.target" ];
-  #   serviceConfig = {
-  #     Type = "oneshot";
-  #     RemainAfterExit = "yes";
-  #   };
-  #   script = ''
-  #     setup
-  #     reboot
-  #   '';
-  # };
+  # Systemd script for automatic setup
+  # journalctl -u system_setup.service -b
+  systemd.services.system_setup = {
+    path = with pkgs; [
+      bash
+      coreutils
+      dig
+      e2fsprogs
+      git
+      nix
+      nixos-install-tools
+      parted
+      partition
+      setup
+      sudo
+      util-linux
+    ];
+    environment = {
+      # NIX_PATH = "nixpkgs=channel:nixos-23.05 nix-build";
+      NIX_PROFILES = "/run/current-system/sw";
+    };
+    after = ["network-online.target"];
+    wants = ["network-online.target"];
+    wantedBy = [ "multi-user.target" ];
+    requires = [ "network-online.target" "nss-lookup.target" "nix-deamon.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = "yes";
+    };
+    script = ''
+      setup
+    '';
+  };
 }

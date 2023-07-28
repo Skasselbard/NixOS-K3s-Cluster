@@ -4,7 +4,7 @@ with lib;
 with pkgs;
 with builtins; {
   options = with types; {
-    cluster.admin = {
+    admin = {
       name = mkOption {
         type = str;
         default = "admin";
@@ -21,16 +21,17 @@ with builtins; {
     };
   };
   config = {
-    users.extraUsers = with config.cluster.admin; {
+    users.extraUsers = with config.admin; {
       root = {
-        openssh.authorizedKeys.keys = map readFile sshKeys;
+        openssh.authorizedKeys.keys = sshKeys;
       };
 
       "${name}" = {
         isNormalUser = true;
         extraGroups = [ "wheel" ];
-        hashedPassword = readFile hashedPwd;
-        openssh.authorizedKeys.keys = map readFile sshKeys;
+        hashedPassword = hashedPwd;
+        # openssh.authorizedKeys.keys = map readFile sshKeys;
+        openssh.authorizedKeys.keys = sshKeys;
       };
     };
   };

@@ -1,5 +1,5 @@
 { pkgs, config, lib, ... }:
-with config.cluster;
+with config;
 with lib; 
 with builtins;
 let 
@@ -43,7 +43,7 @@ in {
           };
           environment.systemPackages = [ pkgs.k3s ];
           security.sudo.extraConfig = ''
-            ${config.cluster.admin.name} ALL = NOPASSWD: ${pkgs.k3s}/bin/k3s
+            ${admin.name} ALL = NOPASSWD: ${pkgs.k3s}/bin/k3s
           '';
         };
       };

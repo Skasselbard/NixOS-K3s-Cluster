@@ -1,7 +1,13 @@
 { config, lib, ... }: {
   options = with lib;
     with types; {
-      cluster.k3s = {
+      nixos_version = mkOption {
+        type = str;
+      };
+      k3s = {
+        version = mkOption {
+          type = str;
+        };
         init = {
           ip = mkOption {
             type = nullOr str;
@@ -18,7 +24,7 @@
             default = null;
           };
           manifests = mkOption {
-            type = listOf str; # FIXME: should be paths but json does not support that
+            type = listOf path;
             default = [];
           };
           extraConfig = mkOption {
@@ -38,4 +44,9 @@
         };
       };
     };
+    imports = [
+      ./admin.nix
+      ./network.nix
+      ./ssh.nix
+    ];
 }

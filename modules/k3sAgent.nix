@@ -1,10 +1,10 @@
 { pkgs, config, ... }:
-with config.cluster;
+with config;
 let
   subnet = "";
   k3sVersionTag = "";
   tokenFilePath = "/var/lib/rancher/k3s/server/token";
-in with config.cluster;{
+in with config;{
   # delay worker service until k3s token is initialized
   systemd.services."podman-${k3s.agent.name}" = {
     # create macvlan for worker node if absent

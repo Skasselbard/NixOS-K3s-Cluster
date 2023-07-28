@@ -1,12 +1,11 @@
 #!/bin/sh
-# This is an auto generated file
 
 set -e
-sudo echo ''
+sudo echo ""
 
+{% if serial -%}
+# get the configured disk and partition it for installation
 serial="{{serial}}"
-# nixosVersion="nixos-23.05" #https://channels.nixos.org/
-
 # get the boot partition
 # ##################
 # test if serial exists
@@ -20,28 +19,42 @@ if [ $result -ne 0 ]; then echo "No disk found with this serial."; exit 2; fi
 # append the /dev/ part of the path
 dev="/dev/$(lsblk -io SERIAL,NAME | grep $serial|cut -f2- --delimiter=' '| sed 's/^[[:space:]]*//')"
 # ###################
-
 sudo partition $dev
 sleep 1s # give disk label exposure some time
-# mount disks
-sudo mkdir /mnt
-sudo mount /dev/disk/by-label/nixos /mnt
-{% if not is_vm -%}
+{%- endif -%}
+
+# mount the expected partitions
+sudo mkdir -p /mnt
+if ! mountpoint -q "/mnt"; then sudo mount /dev/disk/by-label/nixos /mnt; fi
+{%- if not is_vm %}
 # mount boot partition if on physical machine
 sudo mkdir -p /mnt/boot
-sudo mount /dev/disk/by-label/boot /mnt/boot
+if ! mountpoint -q "/mnt/boot"; then sudo mount /dev/disk/by-label/boot /mnt/boot; fi
 {%- endif %}
 
 # copy configs
-sudo mkdir -p /mnt/etc/nixos
 sudo nixos-generate-config --root /mnt
-sudo cp /etc/nixos/configuration.nix /mnt/etc/nixos
-sudo cp -rL /etc/hive /mnt/etc/hive # make sure no symlinks are copied
+sudo mkdir -p /mnt/etc/nixos
+# sudo mkdir -p /mnt/etc/nixos/nixConfigs
+# sudo mkdir -p /mnt/etc/nixos/generated
+# sudo mkdir -p /mnt/etc/nixos/manifests
+# sudo mkdir -p /mnt/etc/nixos/modules
+# sudo cp -LR /etc/nixos/nixConfigs /mnt/etc/nixos
+# sudo cp -L /etc/nixos/generated/*.nix /mnt/etc/nixos/generated
+# sudo cp -LR /etc/nixos/manifests /mnt/etc/nixos
+# sudo cp -LR /etc/nixos/modules /mnt/etc/nixos
+# sudo cp -L /etc/nixos/configuration.nix /mnt/etc/nixos
+sudo cp -LR /etc/nixos /mnt/etc
 
-# download nix channels
-# sudo nix-channel --add "https://nixos.org/channels/$nixosVersion"
-sudo nix-channel --update nixos
+# wait for dns service startup
+timeout 1m bash -c 'until [ "$(dig +short -t srv _ldap._tcp.google.com.)" ]; do sleep 5; done' || echo "Error: cannot resolve google.com"
 
 cd /mnt
 # https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/man-nixos-install.xml
-sudo nixos-install --no-root-passwd
+sudo nixos-install --no-root-passwd -I nixpkgs=channel:nixos-{{nixos_version}}
+
+# write kubernetes token to expected location
+sudo mkdir -p /mnt/var/lib/rancher/k3s/server
+sudo echo "{{token}}" > "/mnt/var/lib/rancher/k3s/server"
+
+sudo reboot

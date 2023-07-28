@@ -24,6 +24,7 @@ def load_plans(path: str):
     global base_path
     base_path = Path(path)
     network = yaml.safe_load(open(base_path / "plans/network.yaml"))
+    versions = yaml.safe_load(open(base_path / "plans/versions.yaml"))
     hosts = read_csv(base_path / "plans/hosts.csv")
     containers = read_csv(base_path / "plans/k3s.csv")
     init_container = check_containers(containers)
@@ -53,6 +54,7 @@ def load_plans(path: str):
         "cluster": {
             "hosts": host_dict,
             "token": get_init_token(),
+            "versions": versions,
         },
     }
 
@@ -142,9 +144,12 @@ def get_admin_password(hostname: str):
     passwd_path = secrets_dir / "passwd"
     special_path = secrets_dir / f"{hostname}_passwd"
     if special_path.exists():
-        return str(special_path)
+        return special_path.read_text()
     else:
-        return str(passwd_path)
+        if not passwd_path.exists():
+            print(f"Error: no password file found for {hostname}", file=sys.stderr)
+            exit(1)
+        return passwd_path.read_text()
 
 
 def get_ssh_keys(hostname: str):
@@ -155,7 +160,9 @@ def get_ssh_keys(hostname: str):
     keys.extend(secrets_dir.glob(f"*{hostname}*.pub"))
     if len(keys) == 0:
         print(f"Warning: no ssh keys found for host {hostname}", file=sys.stderr)
-    return [f"{key}" for key in keys]
+    # return [f"{key}" for key in keys]
+    # return [f"../secrets/{str(key).split('/')[-1]}" for key in keys]
+    return [f"{key.read_text()}" for key in keys]
 
 
 def get_manifests():

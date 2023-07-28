@@ -32,37 +32,11 @@ def init_dir(root_path: Path):
 
 
 def populate_host(host_name, host_config, cluster_config, is_hive=None):
-    custom_modules = Path.cwd() / "nixConfigs"
-    if not custom_modules.exists():
-        print(
-            f'Error: nix configuration path "{custom_modules}"does not exists',
-            file=sys.stderr,
-        )
-        exit(1)
-    # set empty default module paths and include them based on the host configuration
-    server_module, agent_module, custom_module = "", "", ""
-    if "server" in host_config["k3s"]:
-        server_module = "../modules/k3sServer.nix"
-    if "agent" in host_config["k3s"]:
-        agent_module = "../modules/k3sAgent.nix"
-    if host_name + ".nix" in [
-        module.stem + module.suffix for module in custom_modules.iterdir()
-    ]:
-        custom_module = str(custom_modules / host_name) + ".nix"
-    # indent parsed json for readable output
-    json_values = ""
-    for line in str.splitlines(json.dumps(host_config, indent=2), keepends=True):
-        line = "      " + line
-        json_values += line
-    # set the templating vars
     host_vars = {
         "hostname": host_name,
-        "k3sServer": server_module,
-        "k3sAgent": agent_module,
-        "customModule": custom_module,
-        "ip": host_config["ip"],
-        "hostConfig": json_values,
-        "token": cluster_config["token"],
+        "host": host_config,
+        "cluster": cluster_config,
+        # "token": cluster_config["token"],
         "is_hive_setup": is_hive,
     }
     # load template and render templating variables

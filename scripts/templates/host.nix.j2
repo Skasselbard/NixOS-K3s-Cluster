@@ -1,21 +1,59 @@
 {
   imports = [
-    ../modules/admin.nix
-    ../modules/network.nix
-    ../modules/ssh.nix
-    ../modules/k3s.nix
-    {{k3sServer}}
-    {{k3sAgent}}
-    {{customModule}}
+    ../modules
+    {%- if host.k3s.server %}
+    ../modules/k3sServer.nix
+    {%- endif %}
+    {%- if host.k3s.agent %}
+    ../modules/k3sAgent.nix
+    {%- endif %}
+    ../nixConfigs/{{hostname}}.nix
   ];
-  {% if is_hive_setup -%}
-  deployment.targetHost = "{{ip}}";
+  hostname = "{{hostname}}";
+  gateway = "{{host.gateway}}";
+  interface= "{{host.interface}}";
+  ip = "{{host.ip}}";
+  netmask = {{host.netmask}};
+  subnet = "{{host.subnet}}";
+  admin = {
+    hashedPwd = ''{{host.admin.hashedPwd}}'';
+    name = "{{host.admin.name}}";
+    sshKeys = [
+      {%- for key in host.admin.sshKeys %}
+        ''{{key}}''
+      {% endfor -%}
+      ];
+  };
+  k3s = {
+    version = "{{cluster.versions.k3s}}";
+    init = {
+      ip = "{{host.k3s.init.ip}}";
+    };
+    {%- if host.k3s.agent %}
+    agent = {
+      ip = "{{host.k3s.agent.ip}}";
+      name = "{{host.k3s.agent.name}}";
+    };
+    {%- endif -%}
+    {% if host.k3s.server %}
+    server = {
+      ip = "{{host.k3s.server.ip}}";
+      name = "{{host.k3s.server.name}}";
+      manifests = [
+        {% for manifest in host.k3s.server.manifests -%}
+          ../manifests/{{manifest}}
+        {% endfor -%}
+      ];
+    };
+    {%- endif %}
+  };
+  nixos_version = "{{cluster.versions.nixos}}";
+    
+  {%- if is_hive_setup -%}
+  deployment.targetHost = "{{host.ip}}";
   deployment.keys."token" = {
-    text = "{{token}}";
+    text = "{{cluster.token}}";
     destDir = "/var/lib/rancher/k3s/server";
   };
   {%- endif %}
-  cluster = {
-    hostname = "{{hostname}}";}//
-      builtins.fromJSON(''{{hostConfig}}'');
 }

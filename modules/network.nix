@@ -1,21 +1,19 @@
 { lib, config, ... }:
 with lib; {
   options = with types; {
-    cluster = {
-      hostname = mkOption { type = str; };
-      ip = mkOption { type = str; };
-      interface = mkOption { type = str; };
-      gateway = mkOption { type = str; };
-      subnet = mkOption{type = str;};
-      netmask = mkOption{type = int;};
-      # nameservers = mkOption {
-      #   type = listOf str;
-      #   default = [ "8.8.8.8" ];
-      # };
-      # domain = mkOption{type=types.str;};
-    };
+    hostname = mkOption { type = str; };
+    ip = mkOption { type = str; };
+    interface = mkOption { type = str; };
+    gateway = mkOption { type = str; };
+    subnet = mkOption{type = str;};
+    netmask = mkOption{type = int;};
+    # nameservers = mkOption {
+    #   type = listOf str;
+    #   default = [ "8.8.8.8" ];
+    # };
+    # domain = mkOption{type=types.str;};
   };
-  config = with config.cluster; {
+  config = with config; {
     networking = {
       hostName = hostname;
       # domain = config.domain;

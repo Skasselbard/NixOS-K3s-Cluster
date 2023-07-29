@@ -43,16 +43,18 @@ in {
       dig
       e2fsprogs
       git
+      mount
       nix
       nixos-install-tools
       parted
       partition
       setup
       sudo
+      umount
       util-linux
     ];
     environment = {
-      # NIX_PATH = "nixpkgs=channel:nixos-23.05 nix-build";
+      # NIX_PATH = "nixpkgs=channel:nixos-23.05";
       NIX_PROFILES = "/run/current-system/sw";
     };
     after = ["network-online.target"];

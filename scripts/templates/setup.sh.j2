@@ -33,28 +33,19 @@ if ! mountpoint -q "/mnt/boot"; then sudo mount /dev/disk/by-label/boot /mnt/boo
 {%- endif %}
 
 # copy configs
-sudo nixos-generate-config --root /mnt
 sudo mkdir -p /mnt/etc/nixos
-# sudo mkdir -p /mnt/etc/nixos/nixConfigs
-# sudo mkdir -p /mnt/etc/nixos/generated
-# sudo mkdir -p /mnt/etc/nixos/manifests
-# sudo mkdir -p /mnt/etc/nixos/modules
-# sudo cp -LR /etc/nixos/nixConfigs /mnt/etc/nixos
-# sudo cp -L /etc/nixos/generated/*.nix /mnt/etc/nixos/generated
-# sudo cp -LR /etc/nixos/manifests /mnt/etc/nixos
-# sudo cp -LR /etc/nixos/modules /mnt/etc/nixos
-# sudo cp -L /etc/nixos/configuration.nix /mnt/etc/nixos
+sudo nixos-generate-config --root /mnt
 sudo cp -LR /etc/nixos /mnt/etc
 
 # wait for dns service startup
 timeout 1m bash -c 'until [ "$(dig +short -t srv _ldap._tcp.google.com.)" ]; do sleep 5; done' || echo "Error: cannot resolve google.com"
 
-cd /mnt
-# https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/man-nixos-install.xml
-sudo nixos-install --no-root-passwd -I nixpkgs=channel:nixos-{{nixos_version}}
-
 # write kubernetes token to expected location
 sudo mkdir -p /mnt/var/lib/rancher/k3s/server
-sudo echo "{{token}}" > "/mnt/var/lib/rancher/k3s/server"
+echo "{{token}}" | tee "/mnt/var/lib/rancher/k3s/server/token" > /dev/null
 
-sudo reboot
+cd /mnt
+# https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/man-nixos-install.xml
+sudo nixos-install --no-root-passwd -I nixpkgs=channel:nixos-{{nixos_version}} | grep -q "installation finished!"
+
+sudo systemctl --force poweroff

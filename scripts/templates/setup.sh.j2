@@ -46,6 +46,8 @@ echo "{{token}}" | tee "/mnt/var/lib/rancher/k3s/server/token" > /dev/null
 
 cd /mnt
 # https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/man-nixos-install.xml
-sudo nixos-install --no-root-passwd -I nixpkgs=channel:nixos-{{nixos_version}} | grep -q "installation finished!"
+# This error seems to occur on my vm: https://github.com/NixOS/nixpkgs/pull/227696
+# Hopefully its just me ¯\_(ツ)_/¯
+sudo nixos-install --no-root-passwd -I nixpkgs=channel:nixos-{{nixos_version}}
 
 sudo systemctl --force poweroff

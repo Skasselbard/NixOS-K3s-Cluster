@@ -167,7 +167,7 @@ def get_ssh_keys(hostname: str):
 
 def get_manifests():
     manifests = (base_path / "manifests").iterdir()
-    return [f"{manifest}" for manifest in manifests]
+    return [f"{manifest.name}" for manifest in manifests]
 
 
 def get_configuration():

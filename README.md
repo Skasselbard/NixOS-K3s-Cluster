@@ -92,6 +92,26 @@ As shown in the [examples](./examples/) folder this structure is composed of fou
 
 You may want to back up your plans for example in a git repo.
 
+## Workflow
+
+What I do:
+
+Try:
+
+1. Write plans for the cluster (csv files).
+2. Configure Hosts with nix extra configuration.
+3. Build a boot stick and install the system for every host
+4. update k3s manifests (including a git ops service)
+5. deploy cluster configuration
+6. Jump to 4.
+
+Catch (hardware problem):
+
+7. Jump to 1.
+
+- the boot stick from 3. contains the system configuration with a setup script
+- the setup script is run on startup as systemd ``system_setup.service``
+- part of the setup is partitioning the disk if a disk serial was configured
 
 ## Configuration
 
@@ -155,6 +175,25 @@ The ``hardware-configuration.nix`` [contains](https://github.com/NixOS/nixpkgs/b
 3. ramdisk configuration, including kernel modules.
 In my use cases I want control over *1.* and *2.* and I am fine with copying *3.* to my *nixConfigs*, but this might be different for you.
 
+## Nixos-Install bug in (my) vms and maybe on some other systems.
+
+The automatic setup scripts fails softly installung grub on my test vms. This seems to happen because of an [issue finding mount and umount](https://github.com/NixOS/nixpkgs/pull/227696). Hopefully this problem disappears with newer versions.
+
+### Partitioning during installation
+
+If you want to test the installation process for your machine configuration in a vm, the file systems partitioning can get in the way of the booting process.
+Since you dont need your future file systems for the installation environment you can omit the file systems config.
+An easy way to exclude the config, is to set the ``config.fileSystems`` as a default value.
+Since the iso configuration comes with its own partitioning, your settings will be ignored for the installation, but included in the final system.  
+Here is an example:
+``` nix
+config.fileSystems = lib.mkDefault {
+    "/boot" = {
+      ...
+    };
+    ...
+  };
+```
 ## Build Boot Stick for Host
 
 ```shell

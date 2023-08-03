@@ -1,41 +1,84 @@
 { lib, pkgs, ... }:
-let 
-  # wrap install scripts in a package
-  setup = pkgs.writeScriptBin "setup" ''
-      {{setup_script|indent(6)|replace("${","''${")}}
-    '';
-  partition = 
-    pkgs.writeScriptBin "partition" ''
-      {{partition_script|indent(6)|replace("${","''${")}}
-    '';
-in {
-  imports = [./{{host_name}}.nix];
-  networking = {
-    useDHCP = lib.mkForce true;
-    macvlans = lib.mkForce {};
-    interfaces = lib.mkForce {};
+ {
+  imports = [ ../../modules ];
+
+  hostname = "{{hostname}}";
+  gateway = "{{host.gateway}}";
+  interface= "{{host.interface}}";
+  ip = "{{host.ip}}";
+  netmask = {{host.netmask}};
+  subnet = "{{host.subnet}}";
+  admin = {
+    hashedPwd = ''{{host.admin.hashedPwd}}'';
+    name = "{{host.admin.name}}";
+    sshKeys = [
+      {%- for key in host.admin.sshKeys %}
+        ''{{key}}''
+      {% endfor -%}
+      ];
   };
+  
+
 
   # copy all configuration files
   environment.etc = {
-    "nixos/generated" = { source = lib.sources.sourceFilesBySuffices ../generated [".nix"]; };
-    "nixos/manifests" = { source = ../manifests; };
-    "nixos/modules" = { source = ../modules; };
-    "nixos/nixConfigs" = { source = ../nixConfigs; };
+    # "nixos/generated" = { source = lib.sources.sourceFilesBySuffices ../generated [".nix"]; };
+    "nixos/modules" = { source = ../../modules; };
     "nixos/configuration.nix" = {
       text = ''
-        { imports = [./generated/{{host_name}}.nix]; }
+        { config, ... }:{
+          imports = [ ./modules ./hardware-configuration.nix];
+
+          hostname = "{{hostname}}";
+          gateway = "{{host.gateway}}";
+          interface= "{{host.interface}}";
+          ip = "{{host.ip}}";
+          netmask = {{host.netmask}};
+          subnet = "{{host.subnet}}";
+          admin = {
+            hashedPwd = '''{{host.admin.hashedPwd}}''';
+            name = "{{host.admin.name}}";
+            sshKeys = [
+              {%- for key in host.admin.sshKeys %}
+                '''{{key}}'''
+              {% endfor -%}
+              ];
+          };
+          services.openssh.enable = true;
+          networking.firewall.allowedTCPPorts = config.services.openssh.ports;
+          {% if not legacy -%}
+          boot.loader.systemd-boot.enable = true;
+          boot.loader.efi.canTouchEfiVariables = true;
+          fileSystems."/boot".device = "/dev/disk/by-label/boot";
+          fileSystems."/".device = "/dev/disk/by-label/nixos";
+          {%- else %}
+          boot.loader.grub.device = "/dev/vda"; # FIXME: /dev/vda is too specific
+          fileSystems."/".device = "/dev/disk/by-label/nixos";
+          {%- endif %}
+         }
       '';
     };
   };
-  environment.systemPackages = with pkgs; [
+  environment.systemPackages = 
+  let 
+    # wrap install scripts in a package
+    setup = pkgs.writeScriptBin "setup" ''
+      {{setup_script|indent(6)|replace("${","''${")}}
+    '';
+    partition =  pkgs.writeScriptBin "partition" ''
+      {{partition_script|indent(6)|replace("${","''${")}}
+    ''; in with pkgs; 
+  [
+    dig
     setup
     partition
     bash
     parted
   ];
+
+  {% if autoinstall -%}
   # Systemd script for automatic setup
-  # journalctl -u system_setup.service -b
+  # Logs for debug: journalctl -u system_setup.service -b
   systemd.services.system_setup = {
     path = with pkgs; [
       bash
@@ -53,10 +96,6 @@ in {
       umount
       util-linux
     ];
-    environment = {
-      # NIX_PATH = "nixpkgs=channel:nixos-23.05";
-      NIX_PROFILES = "/run/current-system/sw";
-    };
     after = ["network-online.target"];
     wants = ["network-online.target"];
     wantedBy = [ "multi-user.target" ];
@@ -67,6 +106,8 @@ in {
     };
     script = ''
       setup
+      systemctl --force poweroff
     '';
   };
+  {%- endif %}
 }

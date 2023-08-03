@@ -56,6 +56,11 @@ The following assumptions may be of interest:
   - All K3s-servers run the same NixOs version
   - All K3s-agents run the same Kubernetes image
 - The data on the installation medium is disposable and can be overwritten
+- ? there is a `hardware-configuration.nix` in `/etc/nixos/` whenn applying the hive configuration.?
+- The iso for the generated installation medium comes with an installation script.
+  If a disk serial number is given the script partitions a drive with the given serial resulting in a partition labeled "nixos".
+  With our without running the partitioning script, the installation script will then configure nixos to use a root (and boot) partition (according to the mbr/efi setting) for the initial installation.
+
 
 No data folders are mounted for the containers.
 Deleting the Container deletes all Kubernetes data on the host.
@@ -168,32 +173,18 @@ karl| karl-k3s-agent| agent| 10.0.100.15
 
 ## Known Issues
 
-I ignore the ``hardware-configuration.nix`` file. You need to figure out what settings are appropriate for your system your self (e.g. with ``nixos-generate-config``) and include it in your *nixConfigs* files.  
-The ``hardware-configuration.nix`` [contains](https://github.com/NixOS/nixpkgs/blob/nixos-23.05/nixos/doc/manual/manpages/nixos-generate-config.8) three parts:
-1. fileSystem configuration
-2. swap and
-3. ramdisk configuration, including kernel modules.
-In my use cases I want control over *1.* and *2.* and I am fine with copying *3.* to my *nixConfigs*, but this might be different for you.
+### Nixos-Install bug in (my) vms and maybe on some other systems
 
-## Nixos-Install bug in (my) vms and maybe on some other systems.
+The automatic setup script fails softly installing grub on my test vms. This seems to happen because of an [issue finding mount and umount](https://github.com/NixOS/nixpkgs/pull/227696). Hopefully this problem disappears with newer versions.
+The VM is still bootable though.
 
-The automatic setup scripts fails softly installung grub on my test vms. This seems to happen because of an [issue finding mount and umount](https://github.com/NixOS/nixpkgs/pull/227696). Hopefully this problem disappears with newer versions.
+### Workaround for DNS issues
 
-### Partitioning during installation
+The default nameserver configuration does not work (on my test system).
+With default settings the nixos binary cache cannot be resolved resulting updates to fail.
+As a workaround I added googles nameserver (8.8.8.8) to the configuration as default.
+If you like to use your own server, add the `config.nameservers = [ $ip1 $ip2 ... ]` key to your nixos config.
 
-If you want to test the installation process for your machine configuration in a vm, the file systems partitioning can get in the way of the booting process.
-Since you dont need your future file systems for the installation environment you can omit the file systems config.
-An easy way to exclude the config, is to set the ``config.fileSystems`` as a default value.
-Since the iso configuration comes with its own partitioning, your settings will be ignored for the installation, but included in the final system.  
-Here is an example:
-``` nix
-config.fileSystems = lib.mkDefault {
-    "/boot" = {
-      ...
-    };
-    ...
-  };
-```
 ## Build Boot Stick for Host
 
 ```shell

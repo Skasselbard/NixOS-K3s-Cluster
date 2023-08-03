@@ -26,7 +26,7 @@ sleep 1s # give disk label exposure some time
 # mount the expected partitions
 sudo mkdir -p /mnt
 if ! mountpoint -q "/mnt"; then sudo mount /dev/disk/by-label/nixos /mnt; fi
-{%- if not is_vm %}
+{%- if not legacy %}
 # mount boot partition if on physical machine
 sudo mkdir -p /mnt/boot
 if ! mountpoint -q "/mnt/boot"; then sudo mount /dev/disk/by-label/boot /mnt/boot; fi
@@ -34,20 +34,14 @@ if ! mountpoint -q "/mnt/boot"; then sudo mount /dev/disk/by-label/boot /mnt/boo
 
 # copy configs
 sudo mkdir -p /mnt/etc/nixos
-sudo nixos-generate-config --root /mnt
+sudo nixos-generate-config --root /mnt --no-filesystems #--show-hardware-config
 sudo cp -LR /etc/nixos /mnt/etc
 
 # wait for dns service startup
 timeout 1m bash -c 'until [ "$(dig +short -t srv _ldap._tcp.google.com.)" ]; do sleep 5; done' || echo "Error: cannot resolve google.com"
-
-# write kubernetes token to expected location
-sudo mkdir -p /mnt/var/lib/rancher/k3s/server
-echo "{{token}}" | tee "/mnt/var/lib/rancher/k3s/server/token" > /dev/null
 
 cd /mnt
 # https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/man-nixos-install.xml
 # This error seems to occur on my vm: https://github.com/NixOS/nixpkgs/pull/227696
 # Hopefully its just me ¯\_(ツ)_/¯
 sudo nixos-install --no-root-passwd -I nixpkgs=channel:nixos-{{nixos_version}}
-
-sudo systemctl --force poweroff

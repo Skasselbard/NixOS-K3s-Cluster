@@ -7,17 +7,17 @@ with lib; {
     gateway = mkOption { type = str; };
     subnet = mkOption{type = str;};
     netmask = mkOption{type = int;};
-    # nameservers = mkOption {
-    #   type = listOf str;
-    #   default = [ "8.8.8.8" ];
-    # };
+    nameservers = mkOption {
+      type = listOf str;
+      default = [ "8.8.8.8" ];
+    };
     # domain = mkOption{type=types.str;};
   };
   config = with config; {
     networking = {
       hostName = hostname;
       # domain = config.domain;
-      # nameservers = config.nameservers;
+      nameservers = config.nameservers;
       macvlans.vlan1 = {
         # wakeOnLan.enable = true;
         interface = interface;

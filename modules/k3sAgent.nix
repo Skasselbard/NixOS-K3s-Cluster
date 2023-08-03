@@ -1,15 +1,13 @@
 { pkgs, config, ... }:
 with config;
 let
-  subnet = "";
-  k3sVersionTag = "";
   tokenFilePath = "/var/lib/rancher/k3s/server/token";
 in with config;{
   # delay worker service until k3s token is initialized
   systemd.services."podman-${k3s.agent.name}" = {
     # create macvlan for worker node if absent
     preStart =
-      "${pkgs.podman}/bin/podman network exists ${k3s.agent.name}-macvlan ||  ${pkgs.podman}/bin/podman network create --driver=macvlan --gateway=${gateway} --subnet=${subnet}/${builtins.toString netmask} -o parent=${interface} ${k3s.agent.name}-macvlan";
+      "${pkgs.podman}/bin/podman network exists ${k3s.agent.name}-macvlan ||  ${pkgs.podman}/bin/podman network create --driver=macvlan --gateway=${gateway} --subnet=${subnet} -o parent=${interface} ${k3s.agent.name}-macvlan";
       # FIXME: querry the init server host! for the token file
     unitConfig = {
       ConditionPathExists = tokenFilePath;
@@ -21,7 +19,7 @@ in with config;{
   virtualisation.oci-containers = {
     backend = "podman";
     containers."${k3s.agent.name}" = {
-      image = "rancher/k3s:${k3sVersionTag}";
+      image = "rancher/k3s:${k3s.version}";
       cmd = [
         "agent"
         "--token-file=${tokenFilePath}"
@@ -36,7 +34,7 @@ in with config;{
         # "--mac-address=MAC"
       ];
       volumes = [
-        "${tokenFilePath}:/${tokenFilePath}"
+        "${tokenFilePath}:${tokenFilePath}"
       ];
     };
   };

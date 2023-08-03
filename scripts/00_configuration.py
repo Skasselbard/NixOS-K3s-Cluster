@@ -33,9 +33,7 @@ def load_plans(path: str):
     # reformat csv data to a nix style dict
     for host in hosts:
         host["subnet"] = str(
-            ipaddress.ip_network(
-                f"{host['ip']}/{network['netmask']}", strict=False
-            ).hostmask
+            ipaddress.ip_network(f"{host['ip']}/{network['netmask']}", strict=False)
         )
         host["netmask"] = int(network["netmask"])
         host["gateway"] = network["gateway"]

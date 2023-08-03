@@ -3,7 +3,7 @@
 if [ -z ${1+x} ]; then echo "Expected disk path"; exit 1; fi
 
 # From https://nixos.org/manual/nixos/stable/index.html#sec-installation-manual-partitioning
-{% if is_vm -%}
+{% if legacy -%}
 # Create a MBR partition table.
 sudo parted --script $1 -- mklabel msdos
 # Add the root partition.

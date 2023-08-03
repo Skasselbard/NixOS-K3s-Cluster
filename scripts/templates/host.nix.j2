@@ -8,6 +8,7 @@
     ../modules/k3sAgent.nix
     {%- endif %}
     ../nixConfigs/{{hostname}}.nix
+    ./{{hostname}}/hardware-configuration.nix
   ];
   hostname = "{{hostname}}";
   gateway = "{{host.gateway}}";
@@ -24,6 +25,7 @@
       {% endfor -%}
       ];
   };
+  {%- if host.k3s.server or host.k3s.agent %}
   k3s = {
     version = "{{cluster.versions.k3s}}";
     init = {
@@ -47,13 +49,15 @@
     };
     {%- endif %}
   };
+  {%- endif %}
   nixos_version = "{{cluster.versions.nixos}}";
-    
-  {%- if is_hive_setup -%}
+  {% if is_hive_setup -%}
   deployment.targetHost = "{{host.ip}}";
+  {%- if host.k3s.server or host.k3s.agent %}
   deployment.keys."token" = {
     text = "{{cluster.token}}";
     destDir = "/var/lib/rancher/k3s/server";
   };
+  {%- endif %}
   {%- endif %}
 }

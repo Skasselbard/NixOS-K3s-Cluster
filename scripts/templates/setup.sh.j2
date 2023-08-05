@@ -42,6 +42,4 @@ timeout 1m bash -c 'until [ "$(dig +short -t srv _ldap._tcp.google.com.)" ]; do 
 
 cd /mnt
 # https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/man-nixos-install.xml
-# This error seems to occur on my vm: https://github.com/NixOS/nixpkgs/pull/227696
-# Hopefully its just me ¯\_(ツ)_/¯
-sudo nixos-install --no-root-passwd -I nixpkgs=channel:nixos-{{nixos_version}}
+sudo nixos-install --no-root-passwd -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/{commit_sha1}.tar.gz

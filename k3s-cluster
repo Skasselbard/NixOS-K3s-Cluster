@@ -1,0 +1,4 @@
+#!/bin/bash
+
+CMD="k3s-cluster ${@:1}"
+nix-shell --run "$CMD"

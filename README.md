@@ -122,7 +122,7 @@ Catch (hardware problem):
 
 - Physikal machine and network configuration -> in the hosts.csv
 - k3s container and network configuration -> k3s.csv
-- additional nix config in "TODO" subfolder
+- additional nix config in `NixConfigs` subfolder
   - the config is selected by name e.g. host/container "olaf" -> olaf.nix
 - There are X kinds of secrets
   - passwd
@@ -148,6 +148,7 @@ Catch (hardware problem):
 - :bulb: all values are stripped of whitespace and normalize to lowercase letters (=> not case sensitive)
 - you can extend the plans to your liking if you like to store additional data as long as the needed keys are present
 - it should be possible to extend (k3s) config of the k3s server with a config file
+- for k3s versions: take a tag from here https://hub.docker.com/r/rancher/k3s/tags #FIXME: Version is not used for server container
 
 ### Example
 Check the [examples](/exampls/plans) folder.

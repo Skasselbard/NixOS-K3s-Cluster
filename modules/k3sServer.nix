@@ -35,6 +35,8 @@ in {
           networking.firewall.allowedTCPPorts = [ 6443 2379 2380 ];
           services.k3s = {
             enable = true;
+            # k3s -- version
+            # package = "k3s-${k3s.version}"; #https://github.com/NixOS/nixpkgs/tree/nixos-23.05/pkgs/applications/networking/cluster/k3s
             role = "server";
             disableAgent = true;
             clusterInit = mkIf (k3s.init.ip == k3s.server.ip) true;

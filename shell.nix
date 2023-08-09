@@ -23,7 +23,6 @@ in pkgs.mkShell {
     python3
     nixos-generators
     git
-    openssh
     coreutils
     # scripts
     cluster

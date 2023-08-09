@@ -3,43 +3,37 @@
 set -e
 sudo echo ""
 
-{% if serial -%}
-# get the configured disk and partition it for installation
-serial="{{serial}}"
-# get the boot partition
-# ##################
-# test if serial exists
-lsblk -io SERIAL,NAME | grep $serial > /dev/null
-result=$?
-if [ $result -ne 0 ]; then echo "No disk found with this serial."; exit 2; fi
-# get disk info with lsblk
-# get the line with the fitting serial with grep
-# remove the serial from the line with cut
-# make sure there is now leading whitespace with sed
-# append the /dev/ part of the path
-dev="/dev/$(lsblk -io SERIAL,NAME | grep $serial|cut -f2- --delimiter=' '| sed 's/^[[:space:]]*//')"
-# ###################
-sudo partition $dev
-sleep 1s # give disk label exposure some time
-{%- endif -%}
-
-# mount the expected partitions
-sudo mkdir -p /mnt
-if ! mountpoint -q "/mnt"; then sudo mount /dev/disk/by-label/nixos /mnt; fi
-{%- if not legacy %}
-# mount boot partition if on physical machine
-sudo mkdir -p /mnt/boot
-if ! mountpoint -q "/mnt/boot"; then sudo mount /dev/disk/by-label/boot /mnt/boot; fi
-{%- endif %}
-
-# copy configs
-sudo mkdir -p /mnt/etc/nixos
-sudo nixos-generate-config --root /mnt --no-filesystems #--show-hardware-config
-sudo cp -LR /etc/nixos /mnt/etc
-
 # wait for dns service startup
 timeout 1m bash -c 'until [ "$(dig +short -t srv _ldap._tcp.google.com.)" ]; do sleep 5; done' || echo "Error: cannot resolve google.com"
 
+# partitioning
+#######################
+disko_config=/etc/nixos/partitioning.nix
+disk_gen_dir=/etc/nixos/disks
+# get names for all disks
+disk_names=$(nix-instantiate --eval -E "builtins.attrNames $(nix-instantiate --eval --strict $disko_config -A "disko.devices.disk")" | tr -d '[],' | tr -d '"')
+sudo mkdir -p $disk_gen_dir
+# split disko config
+echo Preparing disks for partitioning with disko.
+echo "WARNING: all disk content will be erased if you select yes for the given disk!"
+for disk in $disk_names; do
+    # write every disk into an extra file
+    echo "{disko.devices.disk.$disk = $(nix-instantiate --eval --strict $disko_config -A "disko.devices.disk.$disk");}" | sudo sh -c "nixfmt > $disk_gen_dir/$disk.nix"
+    # ask to run disko for every file
+    echo "Format disk $disk?"
+    [[ "$(read -e -p "[y/N]> "; echo $REPLY)" == [Yy]* ]] && echo "formatting $disk" && \
+      sudo disko --mode disko $disk_gen_dir/$disk.nix
+done
+######################
+# end partitioning
+sudo disko --mode mount /etc/nixos/partitioning.nix
+
+# copy configs
+sudo mkdir -p /mnt/etc/nixos
+sudo nixos-generate-config --root /mnt --no-filesystems
+sudo cp -LR /etc/nixos /mnt/etc
+
+
 cd /mnt
 # https://github.com/NixOS/nixpkgs/blob/master/nixos/doc/manual/man-nixos-install.xml
-sudo nixos-install --no-root-passwd -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/{commit_sha1}.tar.gz
+sudo nixos-install --no-root-passwd -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/{{nixos_version}}.tar.gz

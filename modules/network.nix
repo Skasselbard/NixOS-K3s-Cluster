@@ -18,21 +18,22 @@ with lib; {
       hostName = hostname;
       # domain = config.domain;
       nameservers = config.nameservers;
-      macvlans.vlan1 = {
+      macvlans.vlan1 = mkIf (ip != "dhcp"){
         # wakeOnLan.enable = true;
         interface = interface;
         mode = "bridge";
       };
-      interfaces.vlan1 = {
+      interfaces.vlan1 = mkIf (ip != "dhcp"){
         ipv4.addresses = [{
           address = ip;
           prefixLength = netmask; # TODO: make configurable
         }];
       };
-      defaultGateway = {
+      defaultGateway = mkIf (ip != "dhcp"){
         address = gateway;
         interface = "vlan1";
       };
+      interfaces."${interface}".useDHCP = mkIf (ip == "dhcp") true;
       # TODO: add cluster nodes in /etc/hosts
       # extraHosts = {
       #   "127.0.0.1" = [ "foo.bar.baz" ];

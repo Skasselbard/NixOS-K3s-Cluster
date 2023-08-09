@@ -6,35 +6,32 @@ import sys
 import yaml
 import re
 from pathlib import Path
+import hive
 
 py_script_path = os.path.abspath(os.path.dirname(__file__))
 
 
 def build_host(args, config):
+    # acquire sudo if needed
+    os.system('sudo echo ""') if not args.dry and args.device else None
     host_name = args.name
     host_config = config["cluster"]["hosts"][host_name]
     cluster_config = config["cluster"]
+    nixos_version = config["cluster"]["versions"]["nixos"]
 
     # render setup scripts
     setup_script = render_file(
         py_script_path + "/templates/setup.sh.j2",
-        {
-            "serial": args.serial,
-            "legacy": args.legacy_boot,
-            "nixos_version": cluster_config["versions"]["nixos"],
-        },
-    )
-    partition_script = render_file(
-        py_script_path + "/templates/partition.sh.j2", {"legacy": args.legacy_boot}
+        {"nixos_version": nixos_version},
     )
 
     machine_vars = {
         "hostname": host_name,
         "host": host_config,
         "cluster": cluster_config,
-        "partition_script": partition_script,
         "setup_script": setup_script,
         "legacy": args.legacy_boot,
+        "disko_version": config["cluster"]["versions"]["disko"],
     }
     # load template and render templating variables
     iso_config_nix = render_file(
@@ -49,7 +46,7 @@ def build_host(args, config):
     if not args.dry:
         if (
             os.system(
-                f"nixos-generate --format iso --configuration generated/{host_name}/{host_name}_iso.nix -o generated/{host_name}/iso"
+                f"nixos-generate --format iso --configuration generated/{host_name}/{host_name}_iso.nix -o generated/{host_name}/iso -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/{nixos_version}.tar.gz"
             )
             == 0
         ):
@@ -81,17 +78,12 @@ def get_parser() -> argparse.ArgumentParser:
         help="The output device where the created iso image should be copied to to make a bootable device.",
     )
     parser.add_argument(
-        "-s",
-        "--serial",
-        help="The drive serial to search for partitioning. If omitted you can give a serial as parameter later",
-    )
-    parser.add_argument(
         "-n", "--name", required=True, help="Name of the machine to prepare"
     )
     parser.add_argument(
         "-l",
         "--legacy-boot",
-        help="If this flag is set the partition script is written for MBR legacy boot (see nixos manual)",
+        help="If this flag is set the installation iso is built for MBR legacy boot (see nixos manual)",
         action="store_true",
     )
     parser.add_argument(

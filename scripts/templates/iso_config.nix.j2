@@ -1,13 +1,21 @@
 { lib, pkgs, ... }:
- {
-  imports = [ ../../modules ];
+let 
+  disko = "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/{{disko_version}}.tar.gz"}";
+in {
+  imports = [ 
+    ../../modules 
+    # partitioning
+    "${disko}/module.nix"
+  ];
 
   hostname = "{{hostname}}";
-  gateway = "{{host.gateway}}";
   interface= "{{host.interface}}";
   ip = "{{host.ip}}";
+  {% if host.ip != "dhcp" -%}
   netmask = {{host.netmask}};
   subnet = "{{host.subnet}}";
+  gateway = "{{host.gateway}}";
+  {%- endif %}
   admin = {
     hashedPwd = ''{{host.admin.hashedPwd}}'';
     name = "{{host.admin.name}}";
@@ -24,17 +32,24 @@
   environment.etc = {
     # "nixos/generated" = { source = lib.sources.sourceFilesBySuffices ../generated [".nix"]; };
     "nixos/modules" = { source = ../../modules; };
+    "nixos/partitioning.nix" = { source = ../../partitioning/{{hostname}}.nix; };
     "nixos/configuration.nix" = {
       text = ''
         { config, ... }:{
-          imports = [ ./modules ./hardware-configuration.nix];
+          imports = [
+            ./modules ./hardware-configuration.nix
+            "${disko}/module.nix"
+            ./partitioning.nix
+          ];
 
           hostname = "{{hostname}}";
-          gateway = "{{host.gateway}}";
           interface= "{{host.interface}}";
           ip = "{{host.ip}}";
+          {% if host.ip != "dhcp" -%}
           netmask = {{host.netmask}};
           subnet = "{{host.subnet}}";
+          gateway = "{{host.gateway}}";
+          {%- endif %}
           admin = {
             hashedPwd = '''{{host.admin.hashedPwd}}''';
             name = "{{host.admin.name}}";
@@ -49,11 +64,8 @@
           {% if not legacy -%}
           boot.loader.systemd-boot.enable = true;
           boot.loader.efi.canTouchEfiVariables = true;
-          fileSystems."/boot".device = "/dev/disk/by-label/boot";
-          fileSystems."/".device = "/dev/disk/by-label/nixos";
           {%- else %}
-          boot.loader.grub.device = "/dev/vda"; # FIXME: /dev/vda is too specific
-          fileSystems."/".device = "/dev/disk/by-label/nixos";
+          # boot.loader.grub.device = "/dev/disk/by-partlabel/disk-nixos-boot";
           {%- endif %}
          }
       '';
@@ -63,17 +75,20 @@
   let 
     # wrap install scripts in a package
     setup = pkgs.writeScriptBin "setup" ''
-      {{setup_script|indent(6)|replace("${","''${")}}
+      {{setup_script|indent(6)}}
     '';
-    partition =  pkgs.writeScriptBin "partition" ''
-      {{partition_script|indent(6)|replace("${","''${")}}
-    ''; in with pkgs; 
+  in with pkgs;
   [
     dig
+    emacs
+    #disko
+    (pkgs.callPackage "${disko}/package.nix"{})
     setup
-    partition
     bash
+    git
+    nixfmt
     parted
+    vim
   ];
 
   {% if autoinstall -%}

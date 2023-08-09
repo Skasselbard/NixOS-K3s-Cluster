@@ -32,20 +32,37 @@ def load_plans(path: str):
     host_dict = {}
     # reformat csv data to a nix style dict
     for host in hosts:
-        host["subnet"] = str(
-            ipaddress.ip_network(f"{host['ip']}/{network['netmask']}", strict=False)
-        )
-        host["netmask"] = int(network["netmask"])
-        host["gateway"] = network["gateway"]
         k3s = get_host_containers(host["name"], containers)
-        k3s_dict = {}
-        for container in k3s:
-            format_container(container)
-            k3s_dict.update(container)
-        k3s_dict["init"] = {
-            "ip": init_container["server"]["ip"],
-        }
-        host["k3s"] = k3s_dict
+        ip, deployment_target = host["ip"].split("@")[0], host["ip"].split("@")[1:2]
+        host["deployment_target"] = deployment_target[0] if deployment_target else ip
+        if ip.lower() in ["dhcp", "automatic", "auto", "dynamic", ""]:
+            if not deployment_target:
+                print(
+                    f"Error: dhcp host \"{host['name']}\" needs a target address in the ip field, e.g. \"{ip}@10.0.0.15\"",
+                    file=sys.stderr,
+                )
+                exit(1)
+            host["ip"] = "dhcp"
+            if k3s:
+                print(
+                    f"Warning: cannot create k3s containers for host \"{host['name']}\" with dynamic ip address.",
+                    file=sys.stderr,
+                )
+            host["k3s"] = {}
+        else:
+            host["subnet"] = str(
+                ipaddress.ip_network(f"{host['ip']}/{network['netmask']}", strict=False)
+            )
+            host["netmask"] = int(network["netmask"])
+            host["gateway"] = network["gateway"]
+            k3s_dict = {}
+            for container in k3s:
+                format_container(container)
+                k3s_dict.update(container)
+            k3s_dict["init"] = {
+                "ip": init_container["server"]["ip"],
+            }
+            host["k3s"] = k3s_dict
         format_host(host)
         host_dict.update(host)
     configuration = {

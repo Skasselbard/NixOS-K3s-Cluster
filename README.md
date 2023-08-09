@@ -120,6 +120,7 @@ Catch (hardware problem):
 
 ## Configuration
 
+- configuration done by: bash wrapper aorund nix wrapper that sets up the environment with all needed programs around python scripts - some of which are wrapping colmena
 - Physikal machine and network configuration -> in the hosts.csv
 - k3s container and network configuration -> k3s.csv
 - additional nix config in `NixConfigs` subfolder
@@ -150,6 +151,11 @@ Catch (hardware problem):
 - it should be possible to extend (k3s) config of the k3s server with a config file
 - for k3s versions: take a tag from here https://hub.docker.com/r/rancher/k3s/tags #FIXME: Version is not used for server container
 
+- ip can have a distinct deployment target: ip@deployment_target
+- ip can be dynamic with "dhcp", or "auto"
+  - dynamic ips need deployment target (manually extracted)
+
+- disk with `/` is expected to be formatted during installation
 ### Example
 Check the [examples](/exampls/plans) folder.
 
@@ -174,10 +180,21 @@ karl| karl-k3s-agent| agent| 10.0.100.15
 
 ## Known Issues
 
-### Nixos-Install bug in (my) vms and maybe on some other systems
+### Root disk is always formatted on installation / Non root disks are not formatted
 
-The automatic setup script fails softly installing grub on my test vms. This seems to happen because of an [issue finding mount and umount](https://github.com/NixOS/nixpkgs/pull/227696). Hopefully this problem disappears with newer versions.
-The VM is still bootable though.
+I use [disko](https://github.com/nix-community/disko) for formatting.
+Disko has no way to be partially applyed but should be able to in the future according to 
+[this](https://github.com/nix-community/disko/issues/264) and [this](https://github.com/nix-community/disko/issues/295) issue.
+As a work around I extract the root disk (mountpoint at `/`) from the partitioning configuration and only force to format that disk.
+Other disks are also formatted but fail if a partition table is already present.
+Disko is deployed on the boot image, so you can use it.
+| :warning: **Warning**   
+|:------------------------|
+| **Be careful**: disko formats all disks given in its configuration!
+
+If you want to partially aplly it you need to use a modified configuration.
+The complete configuration is stored at `/etc/nixos/partitioning` (emacs and vim are also deployed with the installation iso).
+
 
 ### Workaround for DNS issues
 

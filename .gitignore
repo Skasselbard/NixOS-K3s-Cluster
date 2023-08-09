@@ -165,3 +165,4 @@ plans/*
 secrets/*
 nixConfigs/*
 manifests/*
+partitioning/*

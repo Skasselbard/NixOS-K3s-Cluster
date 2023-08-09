@@ -1,5 +1,6 @@
 {
   imports = [
+    "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/{{cluster.versions.disko}}.tar.gz"}/module.nix"
     ../modules
     {%- if host.k3s.server %}
     ../modules/k3sServer.nix
@@ -8,14 +9,17 @@
     ../modules/k3sAgent.nix
     {%- endif %}
     ../nixConfigs/{{hostname}}.nix
+    ../partitioning/{{hostname}}.nix
     ./{{hostname}}/hardware-configuration.nix
   ];
   hostname = "{{hostname}}";
-  gateway = "{{host.gateway}}";
   interface= "{{host.interface}}";
   ip = "{{host.ip}}";
+  {% if host.ip != "dhcp" -%}
   netmask = {{host.netmask}};
   subnet = "{{host.subnet}}";
+  gateway = "{{host.gateway}}";
+  {%- endif %}
   admin = {
     hashedPwd = ''{{host.admin.hashedPwd}}'';
     name = "{{host.admin.name}}";
@@ -52,7 +56,7 @@
   {%- endif %}
   nixos_version = "{{cluster.versions.nixos}}";
   {% if is_hive_setup -%}
-  deployment.targetHost = "{{host.ip}}";
+  deployment.targetHost = "{{host.deployment_target}}";
   {%- if host.k3s.server or host.k3s.agent %}
   deployment.keys."token" = {
     text = "{{cluster.token}}";

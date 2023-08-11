@@ -135,6 +135,7 @@ def parse_known_subargs(parser: argparse.ArgumentParser):
         sys.argv[sys.argv.index(parser.prog.split()[-1]) + 1 :]
     )
 
+
 # TODO: update examples
 def init_dir(root_path: pathlib.Path):
     plans = root_path / "plans"
@@ -161,6 +162,7 @@ def init_dir(root_path: pathlib.Path):
     (root_path / "nixConfigs").mkdir(parents=True, exist_ok=True)
     (root_path / "secrets").mkdir(parents=True, exist_ok=True)
     (root_path / "manifests").mkdir(parents=True, exist_ok=True)
+    (root_path / "partitioning").mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":

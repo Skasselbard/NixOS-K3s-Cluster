@@ -74,11 +74,17 @@ Deleting the Container deletes all Kubernetes data on the host.
 
 ## Setup
 
-For setup, you need to create the expected folder structure and a token:
+First you need to setup Nix TODO: link
+To setup, your directory und use the scripts you can run:
 
 ```shell
-nix-shell --run "setup [path]"
+curl -sSf https://raw.githubusercontent.com/Skasselbard/NixOS-K3s-Cluster/main/install.sh | sh
 ```
+
+This will:
+1. download this repository to $PWD/bin
+2. create a runnable script which forwards the given arguments to the python scripts running in a nix shell environment
+3. runs the created script with the `setup` subcommand to create the expected folders and example files to set up your cluster
 
 The token is needed to authenticate and securely connect the different kubernetes participants.
 

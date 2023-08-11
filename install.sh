@@ -10,3 +10,5 @@ nix-shell --run "$CMD"
 ' > k3s-cluster
 
 chmod +x k3s-cluster
+
+./k3s-cluster setup

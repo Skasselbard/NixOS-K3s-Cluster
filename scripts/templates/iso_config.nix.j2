@@ -30,7 +30,6 @@ in {
 
   # copy all configuration files
   environment.etc = {
-    # "nixos/generated" = { source = lib.sources.sourceFilesBySuffices ../generated [".nix"]; };
     "nixos/modules" = { source = ../../modules; };
     "nixos/partitioning.nix" = { source = ../../partitioning/{{hostname}}.nix; };
     "nixos/configuration.nix" = {

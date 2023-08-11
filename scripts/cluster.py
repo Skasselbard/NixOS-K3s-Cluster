@@ -78,7 +78,7 @@ def main():
     args, _ = parser.parse_known_args()
     root_dir = pathlib.Path(args.path)
     os.chdir(root_dir)
-    configuration = get_config(pathlib.Path(os.path.dirname(__file__)).parent)
+    configuration = None if args.subcommand == "setup" else get_config(args.path)
     if args.subcommand == "install":
         install_args = parse_subargs(install_parser)
         installer.build_host(install_args, yaml.safe_load(configuration))
@@ -86,8 +86,8 @@ def main():
         _config_args = parse_subargs(config_parser)
         print(configuration)
     elif args.subcommand == "setup":
-        setup_args = parse_subargs(setup_parser)
-        init_dir(args.path)
+        _setup_args = parse_subargs(setup_parser)
+        init_dir(pathlib.Path(args.path))
     elif args.subcommand == "hive":
 
         def write_config():
@@ -135,7 +135,7 @@ def parse_known_subargs(parser: argparse.ArgumentParser):
         sys.argv[sys.argv.index(parser.prog.split()[-1]) + 1 :]
     )
 
-
+# TODO: update examples
 def init_dir(root_path: pathlib.Path):
     plans = root_path / "plans"
     if not plans.exists():

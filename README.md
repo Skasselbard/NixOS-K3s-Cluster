@@ -73,7 +73,7 @@ TODO:
 - disk with `/` is expected to be formatted during installation
 ### Example
 Check the [examples](/exampls/plans) folder.
-And the [[HowTo]] Guide.
+And the [How To](doc/HowTo.md) Guide.
 
 #### Download the scripts and set up the configuration
 

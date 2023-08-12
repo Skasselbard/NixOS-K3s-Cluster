@@ -44,17 +44,14 @@ def build_host(args, config):
         nix_config.write(iso_config_nix)
 
     if not args.dry:
-        if (
-            os.system(
-                f"nixos-generate --format iso --configuration generated/{host_name}/{host_name}_iso.nix -o generated/{host_name}/iso -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/{nixos_version}.tar.gz"
-            )
-            == 0
-        ):
+        # cmds
+        generate_iso = f"nixos-generate --format iso --configuration generated/{host_name}/{host_name}_iso.nix -o generated/{host_name}/iso -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/{nixos_version}.tar.gz"
+        copy_to_medium = f"sudo dd if=generated/{host_name}/iso/iso/nixos.iso of={args.device} bs=4M conv=fsync status=progress"
+
+        if os.system(generate_iso) == 0:
             if args.device != None:
                 # if the iso build was successful and should be copied to a device: start copying
-                os.system(
-                    f"sudo dd if=generated/{host_name}/iso/iso/nixos.iso of={args.device} bs=4M conv=fsync status=progress"
-                )
+                os.system(copy_to_medium)
             else:
                 return
         else:

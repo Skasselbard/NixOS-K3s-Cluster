@@ -33,8 +33,16 @@ def load_plans(path: str):
     # reformat csv data to a nix style dict
     for host in hosts:
         k3s = get_host_containers(host["name"], containers)
+        # check for a custom deployment target
         ip, deployment_target = host["ip"].split("@")[0], host["ip"].split("@")[1:2]
         host["deployment_target"] = deployment_target[0] if deployment_target else ip
+        # check if host should be deployed locally
+        host["deployment_target"] = (
+            "localhost"
+            if host["deployment_target"].lower() in ["local", "127.0.0.1", "self", "this"]
+            else host["deployment_target"]
+        )
+        # Check if a dynamic ip was assigned
         if ip.lower() in ["dhcp", "automatic", "auto", "dynamic", ""]:
             if not deployment_target:
                 print(
@@ -45,7 +53,7 @@ def load_plans(path: str):
             host["ip"] = "dhcp"
             if k3s:
                 print(
-                    f"Warning: cannot create k3s containers for host \"{host['name']}\" with dynamic ip address.",
+                    f"Warning: cannot create k3s containers for host \"{host['name']}\" with dynamic ip address. Omitting k3s configuration.",
                     file=sys.stderr,
                 )
             host["k3s"] = {}

@@ -89,39 +89,37 @@ def main():
         _setup_args = parse_subargs(setup_parser)
         init_dir(pathlib.Path(args.path))
     elif args.subcommand == "hive":
-
-        def write_config():
-            (generated_dir / "hive.nix").write_text(
-                hive.get_hive_nix(yaml.safe_load(configuration))
-            )
-
         generated_dir = root_dir / "generated"
         if args.hive_commands == "generate":
             _generate_args = parse_subargs(generate_parser)
             write_config()
         elif args.hive_commands == "build":
             _, unknown = parse_known_subargs(build_parser)
-            if not args.skip_generate:
-                write_config()
-            cmd = " ".join(
-                ["colmena", "build", "-f", str(generated_dir / "hive.nix")] + unknown
-            )
-            print(f"Running '{cmd}'")
-            os.system(cmd)
+            colmena("build", unknown, args.skip_generate)
         elif args.hive_commands == "deploy":
             _, unknown = parse_known_subargs(deploy_parser)
-            if not args.skip_generate:
-                write_config()
-            cmd = " ".join(
-                ["colmena", "apply", "-f", str(generated_dir / "hive.nix")] + unknown
-            )
-            print(f"Running '{cmd}'")
-            os.system(cmd)
+            colmena("apply", unknown, args.skip_generate)
         else:
             print(hive.get_hive_nix(yaml.safe_load(configuration)))
     else:
         # case should already be caught by argparse
         print("Unrecognized subcommand", file=sys.stderr)
+
+
+def colmena(subcommand, args, skip_generate=False):
+    if not skip_generate:
+        write_config()
+    cmd = " ".join(
+        ["colmena", subcommand, "-f", str(generated_dir / "hive.nix")] + args
+    )
+    print(f"Running '{cmd}'")
+    os.system(cmd)
+
+
+def write_config():
+    (generated_dir / "hive.nix").write_text(
+        hive.get_hive_nix(yaml.safe_load(configuration))
+    )
 
 
 def parse_subargs(parser: argparse.ArgumentParser):

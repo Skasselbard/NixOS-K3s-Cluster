@@ -1,12 +1,12 @@
 {
   imports = [
     "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/{{cluster.versions.disko}}.tar.gz"}/module.nix"
-    ../modules
+    {{cluster.modules_path}}
     {%- if host.k3s.server %}
-    ../modules/k3sServer.nix
+    {{cluster.modules_path}}/k3sServer.nix
     {%- endif %}
     {%- if host.k3s.agent %}
-    ../modules/k3sAgent.nix
+    {{cluster.modules_path}}/k3sAgent.nix
     {%- endif %}
     ../nixConfigs/{{hostname}}.nix
     ../partitioning/{{hostname}}.nix

@@ -3,7 +3,7 @@ let
   disko = "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/{{disko_version}}.tar.gz"}";
 in {
   imports = [ 
-    ../../modules 
+    {{cluster.modules_path}}
     # partitioning
     "${disko}/module.nix"
   ];
@@ -30,13 +30,14 @@ in {
 
   # copy all configuration files
   environment.etc = {
-    "nixos/modules" = { source = ../../modules; };
+    "nixos/modules" = { source = {{cluster.modules_path}}; };
     "nixos/partitioning.nix" = { source = ../../partitioning/{{hostname}}.nix; };
     "nixos/configuration.nix" = {
       text = ''
         { config, ... }:{
           imports = [
-            ./modules ./hardware-configuration.nix
+            ./modules
+            ./hardware-configuration.nix
             "${disko}/module.nix"
             ./partitioning.nix
           ];

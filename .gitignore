@@ -166,3 +166,4 @@ secrets/*
 nixConfigs/*
 manifests/*
 partitioning/*
+.vscode/*

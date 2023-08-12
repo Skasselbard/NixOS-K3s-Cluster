@@ -39,7 +39,8 @@ def load_plans(path: str):
         # check if host should be deployed locally
         host["deployment_target"] = (
             "localhost"
-            if host["deployment_target"].lower() in ["local", "127.0.0.1", "self", "this"]
+            if host["deployment_target"].lower()
+            in ["local", "127.0.0.1", "self", "this"]
             else host["deployment_target"]
         )
         # Check if a dynamic ip was assigned
@@ -76,6 +77,7 @@ def load_plans(path: str):
     configuration = {
         "cluster": {
             "hosts": host_dict,
+            "modules_path": script_path + "/../modules",
             "token": get_init_token(),
             "versions": versions,
         },

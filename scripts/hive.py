@@ -4,6 +4,7 @@ import os
 import subprocess
 import re
 from jinja2 import Template
+from pathlib import Path
 
 
 def get_hive_nix(config: dict):
@@ -11,6 +12,7 @@ def get_hive_nix(config: dict):
     nix_config = f'# This is an auto generated file.\n{{\nmeta.nixpkgs = import (\n\
     builtins.fetchTarball "https://github.com/NixOS/nixpkgs/archive/{nixos_version}.tar.gz"\n){{}};\n'
     for host_name, host_config in config["cluster"]["hosts"].items():
+        (Path.cwd() / f"generated/{host_name}").mkdir(parents=True, exist_ok=True)
         get_hardware_configuration(host_name, host_config)
         nix_config += (
             f"{host_name} = "
@@ -24,7 +26,7 @@ def get_hive_nix(config: dict):
 def get_hardware_configuration(hostname, host_config):
     if (
         os.system(
-            f'scp {host_config["admin"]["name"]}@{host_config["deployment_target"]}:/etc/nixos/hardware-configuration.nix generated/{hostname}'
+            f'scp {host_config["admin"]["name"]}@{host_config["deployment_target"]}:/etc/nixos/hardware-configuration.nix generated/{hostname}/hardware-configuration.nix'
         )
         != 0
     ):

@@ -89,16 +89,20 @@ def main():
         _setup_args = parse_subargs(setup_parser)
         init_dir(pathlib.Path(args.path))
     elif args.subcommand == "hive":
-        generated_dir = root_dir / "generated"
+        hive_nix = root_dir / "generated/hive.nix"
         if args.hive_commands == "generate":
             _generate_args = parse_subargs(generate_parser)
-            write_config()
+            hive_nix.write_text(hive.get_hive_nix(yaml.safe_load(configuration)))
         elif args.hive_commands == "build":
-            _, unknown = parse_known_subargs(build_parser)
-            colmena("build", unknown, args.skip_generate)
+            if not args.skip_generate:
+                hive_nix.write_text(hive.get_hive_nix(yaml.safe_load(configuration)))
+            _, colmena_args = parse_known_subargs(build_parser)
+            colmena("build", hive_nix, colmena_args)
         elif args.hive_commands == "deploy":
-            _, unknown = parse_known_subargs(deploy_parser)
-            colmena("apply", unknown, args.skip_generate)
+            if not args.skip_generate:
+                hive_nix.write_text(hive.get_hive_nix(yaml.safe_load(configuration)))
+            _, colmena_args = parse_known_subargs(deploy_parser)
+            colmena("apply", hive_nix, colmena_args)
         else:
             print(hive.get_hive_nix(yaml.safe_load(configuration)))
     else:
@@ -106,20 +110,10 @@ def main():
         print("Unrecognized subcommand", file=sys.stderr)
 
 
-def colmena(subcommand, args, skip_generate=False):
-    if not skip_generate:
-        write_config()
-    cmd = " ".join(
-        ["colmena", subcommand, "-f", str(generated_dir / "hive.nix")] + args
-    )
+def colmena(subcommand, hive_nix: pathlib.Path, args):
+    cmd = " ".join(["colmena", subcommand, "-f", str(hive_nix)] + args)
     print(f"Running '{cmd}'")
     os.system(cmd)
-
-
-def write_config():
-    (generated_dir / "hive.nix").write_text(
-        hive.get_hive_nix(yaml.safe_load(configuration))
-    )
 
 
 def parse_subargs(parser: argparse.ArgumentParser):
@@ -161,6 +155,7 @@ def init_dir(root_path: pathlib.Path):
     (root_path / "secrets").mkdir(parents=True, exist_ok=True)
     (root_path / "manifests").mkdir(parents=True, exist_ok=True)
     (root_path / "partitioning").mkdir(parents=True, exist_ok=True)
+    (root_path / "generated").mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":
